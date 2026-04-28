@@ -12,12 +12,15 @@ class ReActAgent:
         self.tool_executor = tool_executor
         self.max_steps = max_steps
         self.history = []
+        self.tool_failures = {}  # {tool_name: {"count": int, "last_error": str}}
+        self.max_failures = 3
 
     def run(self, question: str):
         """
         运行ReAct智能体来回答一个问题。
         """
         self.history = []  # 每次运行时重置历史记录
+        self.tool_failures = {}  # 每次对话重置失败记录
         current_step = 0
 
         while current_step < self.max_steps:
@@ -27,8 +30,10 @@ class ReActAgent:
             # 1. 格式化提示词
             tools_desc = self.tool_executor.getAvailableTools()
             history_str = "\n".join(self.history)
+            hints = self._build_hints()
             prompt = REACT_PROMPT_TEMPLATE.format(
                 tools=tools_desc,
+                hints=hints,
                 question=question,
                 history=history_str
             )
@@ -70,9 +75,24 @@ class ReActAgent:
 
             tool_function = self.tool_executor.getTool(tool_name)
             if not tool_function:
-                observation = f"错误:未找到名为 '{tool_name}' 的工具。"
+                observation = f"[ERROR:NOT_FOUND] 错误:未找到名为 '{tool_name}' 的工具。"
             else:
-                observation = tool_function(tool_input)  # 调用真实工具
+                try:
+                    observation = tool_function(tool_input)  # 调用真实工具
+                except Exception as e:
+                    observation = f"[ERROR:EXECUTION] 错误:工具执行异常: {e}"
+
+            # 失败跟踪与提示注入
+            error_type = self._classify_error(observation)
+            if error_type:
+                fail_record = self.tool_failures.setdefault(
+                    tool_name, {"count": 0, "last_error": error_type}
+                )
+                fail_record["count"] += 1
+                fail_record["last_error"] = error_type
+            else:
+                # 成功则清除该工具的失败记录
+                self.tool_failures.pop(tool_name, None)
 
             # (这段逻辑紧随工具调用之后，在 while 循环的末尾)
             print(f"👀 观察: {observation}")
@@ -84,6 +104,62 @@ class ReActAgent:
             # 循环结束
         print("已达到最大步数，流程终止。")
         return None
+
+    def _classify_error(self, observation: str) -> str | None:
+        """从 observation 中解析错误类型。返回 None 表示未检测到错误。"""
+        match = re.match(r"\[ERROR:([A-Z_]+)\]", observation)
+        if match:
+            return match.group(1)
+        # 兼容旧格式的错误字符串
+        if "错误" in observation:
+            return "UNKNOWN"
+        return None
+
+    def _build_hints(self) -> str:
+        """根据工具失败记录生成提示字符串。"""
+        if not self.tool_failures:
+            return ""
+
+        hints = []
+        for tool_name, record in self.tool_failures.items():
+            if record["count"] >= self.max_failures:
+                hint = self._generate_hint(tool_name, record)
+                hints.append(hint)
+
+        if not hints:
+            return ""
+
+        return "\n【系统提示】\n" + "\n".join(hints) + "\n"
+
+    def _generate_hint(self, tool_name: str, record: dict) -> str:
+        """根据错误类型生成针对性的恢复提示。"""
+        error_type = record["last_error"]
+        count = record["count"]
+
+        if error_type in ("INVALID_ARGUMENT", "INVALID_EXPRESSION"):
+            return (
+                f"- 工具 '{tool_name}' 已连续失败 {count} 次（参数错误）。"
+                f"请仔细检查输入格式是否正确，或尝试换用其他工具。"
+            )
+        elif error_type in ("NETWORK", "TIMEOUT", "EXECUTION"):
+            return (
+                f"- 工具 '{tool_name}' 已连续失败 {count} 次（服务异常）。"
+                f"该工具当前可能不可用，建议换用其他工具或直接给出已知信息。"
+            )
+        elif error_type == "EMPTY_RESULT":
+            return (
+                f"- 工具 '{tool_name}' 已连续失败 {count} 次（无结果）。"
+                f"请尝试更换关键词或调整查询策略。"
+            )
+        elif error_type == "NOT_FOUND":
+            return (
+                f"- 工具 '{tool_name}' 不存在，请只使用可用工具列表中的工具。"
+            )
+        else:
+            return (
+                f"- 工具 '{tool_name}' 已连续失败 {count} 次。"
+                f"请尝试调整参数或换用其他工具。"
+            )
 
     def _parse_output(self, text: str):
         # 1) 优先解析 "Thought: ...\nAction: ..." 这种纯文本格式

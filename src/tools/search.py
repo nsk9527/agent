@@ -28,7 +28,7 @@ class SearchTool:
         try:
             api_key = os.getenv(self.api_key_env)
             if not api_key:
-                return f"错误:{self.api_key_env} 未在 .env 文件中配置。"
+                return f"[ERROR:INVALID_ARGUMENT] 错误:{self.api_key_env} 未在 .env 文件中配置。"
 
             params = {
                 "engine": self.engine,
@@ -56,7 +56,7 @@ class SearchTool:
                 ]
                 return "\n\n".join(snippets)
 
-            return f"对不起，没有找到关于 '{query}' 的信息。"
+            return f"[ERROR:EMPTY_RESULT] 对不起，没有找到关于 '{query}' 的信息。"
 
         except Exception as e:
-            return f"搜索时发生错误: {e}"
+            return f"[ERROR:EXECUTION] 搜索时发生错误: {e}"

@@ -16,7 +16,7 @@ def reActAgent():
         tool_executor.registerTool(search_tool)
         tool_executor.registerTool(calculator_tool)
         agent = ReActAgent(llm_client, tool_executor)
-        agent.run("40个梨分给3个班，分给一班20个，其余平均分给二班和三班，二班分到几个")
+        agent.run("互联网“微商”经营已成为大众创业新途径，某微信平台上一件商品标价为200元，按标价的五折销售，仍可获利20元，则这件商品的进价为？")
     except ValueError as e:
         print(e)
 

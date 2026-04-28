@@ -5,7 +5,7 @@ REACT_PROMPT_TEMPLATE = """
 
 可用工具如下：
 {tools}
-
+{hints}
 请严格按照以下格式进行回应：
 1、返回一个包含Thought和Action字符串
 3、返回的内容格式如下

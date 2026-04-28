@@ -29,11 +29,11 @@ class CalculatorTool:
             result = self._evaluate(expression)
             return str(result)
         except ZeroDivisionError:
-            return "错误: 除数不能为零。"
+            return "[ERROR:INVALID_EXPRESSION] 错误: 除数不能为零。"
         except (ValueError, TypeError, SyntaxError) as e:
-            return f"错误: 表达式无效或包含不允许的运算。详细信息: {e}"
+            return f"[ERROR:INVALID_EXPRESSION] 错误: 表达式无效或包含不允许的运算。详细信息: {e}"
         except Exception as e:
-            return f"计算时发生错误: {e}"
+            return f"[ERROR:EXECUTION] 计算时发生错误: {e}"
 
     def _evaluate(self, expression: str):
         """安全地解析并计算数学表达式。"""
