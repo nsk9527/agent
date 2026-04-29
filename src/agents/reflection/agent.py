@@ -1,5 +1,5 @@
 from .prompt import INITIAL_PROMPT_TEMPLATE, REFLECT_PROMPT_TEMPLATE, REFINE_PROMPT_TEMPLATE
-from ..baseAgent import BaseAgent
+from ..base_agent import BaseAgent
 from .memory import Memory
 
 

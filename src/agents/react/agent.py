@@ -1,9 +1,9 @@
 import re
 import json
 
-from ...tools.ToolExecutor import ToolExecutor
+from ...tools.tool_executor import ToolExecutor
 from .prompt import REACT_PROMPT_TEMPLATE
-from ..baseAgent import BaseAgent
+from ..base_agent import BaseAgent
 
 
 class ReActAgent:

@@ -1,10 +1,10 @@
 from .tools.search import SearchTool
 from .tools.calculator import CalculatorTool
-from .tools.ToolExecutor import ToolExecutor
-from .agents.ReAct.agent import ReActAgent
-from .agents.PlanAndSolve.agent import PlanAndSolveAgent
-from .agents.Reflection.agent import ReflectionAgent
-from .agents.baseAgent import BaseAgent
+from .tools.tool_executor import ToolExecutor
+from .agents.react.agent import ReActAgent
+from .agents.plan_and_solve.agent import PlanAndSolveAgent
+from .agents.reflection.agent import ReflectionAgent
+from .agents.base_agent import BaseAgent
 
 
 def reActAgent():
